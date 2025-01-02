@@ -1,85 +1,88 @@
 # FPGA_Digital_Clock_Stop_Watch
 
+This README provides an overview of the `Top` module, which combines multiple submodules to implement a digital clock with seven-segment display functionality. The design integrates clock division, digit selection, and binary-coded decimal (BCD) to seven-segment display conversion.
+
 ## Overview
-This project implements a digital clock  in Verilog. The module is designed to keep track of hours, minutes, and seconds, with options to manually adjust the time and reset it. The clock outputs its time in Binary-Coded Decimal (BCD) format for display purposes.
 
-## Features
-- Keeps track of seconds, minutes, and hours.
-- Supports a 24-hour format.
-- Manual adjustment options for hours and minutes.
-- Reset functionality to reset the time to 00:00:00.
-- Outputs time in BCD format for integration with display systems.
+The `Top` module orchestrates the following components:
+- **Clock Division**: Generates different clock signals for refreshing the display and timing the digital clock.
+- **Digital Clock**: Tracks hours, minutes, and seconds.
+- **Digit Display Control**: Selects which digit is active on the display.
+- **BCD Control**: Maps the active digit's value to the corresponding seven-segment display.
+- **BCD to 7-Segment Conversion**: Converts BCD values into cathode signals for the display.
 
-## Module Ports
+## Inputs and Outputs
+
 ### Inputs:
-- **clk**: Clock signal input.
-- **en**: Enable signal to start/stop the clock.
-- **reset**: Reset signal to initialize the time to 00:00:00.
-- **HourP**: Signal to manually increment the hour.
-- **minuteP**: Signal to manually increment the minute.
+- **`clk`**: The primary clock signal for the system.
+- **`en`**: Enable signal for the digital clock.
+- **`reset`**: Resets the digital clock to zero.
+- **`HourP`**: Increment hours.
+- **`minuteP`**: Increment minutes.
 
 ### Outputs:
-- **s1**: BCD output for the first digit of seconds.
-- **s2**: BCD output for the second digit of seconds.
-- **m1**: BCD output for the first digit of minutes.
-- **m2**: BCD output for the second digit of minutes.
-- **h1**: BCD output for the first digit of hours.
-- **h2**: BCD output for the second digit of hours.
+- **`cathode [7:0]`**: Cathode signals for the seven-segment display.
+- **`AN [7:0]`**: Anode signals for selecting active segments.
 
-## Functional Description
-1. **Time Tracking**:
-   - Uses three 6-bit registers to store hours, minutes, and seconds.
-   - The clock counts seconds and increments minutes and hours as needed.
+## Internal Wires
 
-2. **Reset Functionality**:
-   - When the `reset` signal is active, the time resets to 00:00:00.
+- **`s1, s2`**: BCD digits for seconds (tens and ones).
+- **`m1, m2`**: BCD digits for minutes (tens and ones).
+- **`h1, h2`**: BCD digits for hours (tens and ones).
+- **`DP`**: Digit selection signals.
+- **`display`**: Active BCD digit.
+- **`New_clk`**: Clock signal for refreshing the display.
+- **`Time_clk`**: Clock signal for timing the digital clock.
 
-3. **Manual Adjustments**:
-   - The `HourP` signal increments the hour by 1, wrapping back to 0 after 23.
-   - The `minuteP` signal increments the minute by 1, wrapping back to 0 after 59.
+## Submodules
 
-4. **BCD Conversion**:
-   - Time values (seconds, minutes, hours) are converted to BCD format using instances of the `Binary_to_BCD` module for display purposes.
+### 1. **Clock Division (`Clock_div`)**
+- Generates clock signals for different purposes:
+  - **`New_clk`**: For refreshing the display.
+  - **`Time_clk`**: For updating the digital clock values.
 
-5. **Clock Enable**:
-   - When `en` is active, the clock starts counting.
-   - A slower internal clock is derived to control the counting frequency.
+### 2. **Digital Clock (`Digital_Clock`)**
+- Manages the tracking of hours, minutes, and seconds.
+- Outputs BCD values for each time unit.
 
-## Dependencies
-- **Binary_to_BCD Module**:
-  - Converts binary values to BCD format.
-  - Instances:
-    - `secs`: Converts seconds.
-    - `mins`: Converts minutes.
-    - `hours`: Converts hours.
+### 3. **Digit Display (`Digit_Display`)**
+- Cycles through active digits (seconds, minutes, hours) and determines which digit to display.
 
-## Limitations
-- This module assumes a clock frequency and a division mechanism to create a 1-second tick. Ensure the input `clk` matches the required frequency.
-- Manual adjustments (`HourP` and `minuteP`) do not check for simultaneous activations.
+### 4. **BCD Control (`BCD_control`)**
+- Routes the appropriate BCD value to the output based on the active digit.
+- Controls anode signals to select the active segment.
+
+### 5. **BCD to 7-Segment Conversion (`BCD_To_7seg`)**
+- Converts BCD values to seven-segment cathode signals for display.
+
+## Operation
+
+1. The `Clock_div` module generates two clock signals:
+   - **`New_clk`** for refreshing the display.
+   - **`Time_clk`** for updating the digital clock.
+2. The `Digital_Clock` module tracks the current time and outputs BCD values for hours, minutes, and seconds.
+3. The `Digit_Display` module cycles through the digits and determines which digit is active.
+4. The `BCD_control` module selects the active BCD value and determines the corresponding anode signals.
+5. The `BCD_To_7seg` module converts the selected BCD value to cathode signals for display.
 
 ## Usage
-1. Connect the clock signal to the `clk` input.
-2. Use the `en` signal to start or stop the clock.
-3. Reset the time using the `reset` input.
-4. Use the `HourP` and `minuteP` inputs for manual adjustments.
-5. Connect the BCD outputs (`s1`, `s2`, `m1`, `m2`, `h1`, `h2`) to a display system.
 
-## Example
-Here is an example of connecting the Digital_Clock module:
-```verilog
-Digital_Clock myClock (
-    .clk(system_clk),
-    .en(enable_signal),
-    .reset(reset_signal),
-    .HourP(increment_hour),
-    .minuteP(increment_minute),
-    .s1(seconds_first_digit),
-    .s2(seconds_second_digit),
-    .m1(minutes_first_digit),
-    .m2(minutes_second_digit),
-    .h1(hours_first_digit),
-    .h2(hours_second_digit)
-);
-```
+- Connect the `clk` signal to the main clock source.
+- Use `en` to start the clock.
+- Use `reset` to reset the clock to zero.
+- Use `HourP` and `minuteP` to manually increment hours and minutes.
+- The outputs (`cathode` and `AN`) drive the seven-segment display.
 
+## Notes
+
+- The `Clock_div` parameters (e.g., `200` and `4000000`) can be adjusted to modify the refresh rate and clock timing.
+- Ensure proper connections for all inputs and outputs to integrate the module into your system.
+
+## Dependencies
+
+- `Clock_div` module
+- `Digital_Clock` module
+- `Digit_Display` module
+- `BCD_control` module
+- `BCD_To_7seg` module
 
