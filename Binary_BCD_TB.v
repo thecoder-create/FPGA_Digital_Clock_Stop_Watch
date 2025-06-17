@@ -24,7 +24,7 @@ module Binary_BCD_TB(
 
     );
     reg clk;
-    reg[5:0] signal; // 12 bit signal input
+    reg[5:0] signal; // 6 bit signal input
     wire [3:0] hundred;
     wire [3:0] tens;
     wire [3:0] ones;
